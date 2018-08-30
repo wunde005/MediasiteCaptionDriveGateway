@@ -1,0 +1,5 @@
+{
+  "sfapikey": "mediasite api key",
+  "Authorization": "Basic base64-encoded-auth-info",
+  "uri": "https://<host name>/Mediasite"
+}

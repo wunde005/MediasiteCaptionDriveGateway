@@ -1,0 +1,28 @@
+{
+  "name": "drivecaption",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "drivecaption": "DriveCaption.js"
+  },
+  "dependencies": {
+    "googleapis": "^32.0.0",
+    "moment": "^2.22.2",
+    "needle": "^2.2.1",
+    "node-json-db": "^0.7.5",
+    "node-rest-client": "^3.1.0",
+    "nodemailer": "^4.6.7",
+    "supports-color": "^5.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.umn.edu:wunde005/DriveCaption.git"
+  },
+  "author": "",
+  "license": "ISC"
+}
