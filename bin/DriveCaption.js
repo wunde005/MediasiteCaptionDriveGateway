@@ -32,8 +32,45 @@ else {
 }
 console.log("cwd path:", p)
 
+fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
+  if (err) {
+    console.log(err);
+  } else {
+    config = JSON.parse(data); //now it an object
+   console.log
+
+   if(config.Mediasite_Auth_file){
+    const MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
+    fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        //console.log(data)
+        msauth = JSON.parse(data); //now it an object
+        args.headers.sfapikey = msauth.sfapikey
+        args.headers.Authorization = msauth.Authorization
+      }
+    })
+  
+  }
+  else{
+    const MEDIASITE_AUTH = __dirname + configp + 'mediasite_auth.json'
+    fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        //console.log(data)
+        msauth = JSON.parse(data); //now it an object
+        args.headers.sfapikey = msauth.sfapikey
+        args.headers.Authorization = msauth.Authorization
+      }
+    })
+  
+  }
+  
+  }
+}) //config.folders_enabled
 const CLIENT_SECRET = __dirname + configp + 'client_secret.json'
-const MEDIASITE_AUTH = __dirname + configp + 'mediasite_auth.json'
 
 // If modifying these scopes, delete credentials.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
@@ -152,16 +189,6 @@ try {
 }
 
 
-fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
-  if (err) {
-    console.log(err);
-  } else {
-    //console.log(data)
-    msauth = JSON.parse(data); //now it an object
-    args.headers.sfapikey = msauth.sfapikey
-    args.headers.Authorization = msauth.Authorization
-  }
-})
 
 //copy file settings over default settings
 for (var attributename in enable_file) {
@@ -410,8 +437,8 @@ scanforfiles = function () {
                   badManifest = true
                 } else if (processing.indexOf(result['MediasiteCaptioningSubmission']['MediasitePresentationId'][0]) == -1) {
                   presentation.id = presentation.MediasitePresentationId
-
-                  plog(presentation.id + ':Manifest:' + result['MediasiteCaptioningSubmission']['PresentationTitle'][0], presentation)
+                  presentation.Title = result['MediasiteCaptioningSubmission']['PresentationTitle'][0]
+                  plog(presentation.id + ':Manifest:' + presentation.Title, presentation)
 
                   for (var i = 0, len = files.length; i < len; i++) {
                     var inputfile = ""
@@ -426,18 +453,26 @@ scanforfiles = function () {
 
                       presentation.inputfile = inputfile
                       getPresentationInfo(presentation.id, (data) => {
-                        presentation.ParentFolderName = data.ParentFolderName
-                        presentation.ParentFolderId = data.ParentFolderId
-                        presentation.Title = data.Title
+                        if(config.folders_enabled){
+                          presentation.ParentFolderName = data.ParentFolderName
+                          presentation.ParentFolderId = data.ParentFolderId
+                          presentation.Title = data.Title
+                        }
+                        else{
+                          presentation.ParentFolderName = ""
+                          presentation.ParentFolderId = config.folderid_root
+                          //presentation.Title = data.Title
+                        }
                         fs.readFile(CLIENT_SECRET, (err, content) => {
                           if (err) return console.log('Error loading client secret file:', err);
                           // Authorize a client with credentials, then call the Google Drive API.
                           authorize(JSON.parse(content), (auth) => {
-
+                            //console.log(presentation)
                             folderForData(auth, config.folderid_root, presentation.ParentFolderName, (data) => {
                               plog(presentation.id + ':folderForData:FolderName:' + data.name + ':FolderId:' + data.id, presentation)
 
                               var newfilename = presentation.Title + '_' + presentation.id + ".mp4"
+                              plog(presentation.id + ':newmp4name:filename:' + newfilename, presentation)
                               uploadMP4file(auth, presentation.inputfile, newfilename, data.id, (doner) => {
                                 presentation.gdriveid = doner.id
                                 plog(presentation.id + ':uploadMP4files:gdriveid:' + presentation.gdriveid, presentation)
@@ -528,13 +563,6 @@ function getPresentationInfo(presentationid, done) {
   });
 }
 
-fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
-  if (err) {
-    console.log(err);
-  } else {
-    config = JSON.parse(data); //now it an object
-  }
-})
 
 
 // Load client secrets from a local file.
@@ -635,6 +663,7 @@ function readManifest(file, done) {
       var presentation = {}
       presentation.manifest = path.basename(file)
       presentation.id = path.basename(presentation.manifest, '.manifest')
+      //presentation.Title = path.basename(presentation.manifest,)
       plog(presentation.id + ":scanforfiles:Found Manifest", presentation)
 
       if (result == null) {
@@ -968,6 +997,9 @@ async function folderForData(auth, folderid_root, foldername, filelistret) {
     //console.log('file',file)
     if (file != null) {
       filelistret(file)
+      }
+    else if(foldername == ""){
+      filelistret({"id":config.folderid_root,"name":"root"})        
     } else {
       plog(':folderForData:creatingfolder:' + foldername)
       //console.log('Folder not found. Creating new folder.');
@@ -976,9 +1008,15 @@ async function folderForData(auth, folderid_root, foldername, filelistret) {
 
         drive_folders[foldername] = null
         createFolder(auth, folderid_root, foldername, (donez) => {
-          drive_folders[foldername] = donez.id
-          plog(':folderForData:foldercreated:' + donez.name + ':' + donez.id)
-          filelistret(donez)
+          if(foldername !== ""){
+            drive_folders[foldername] = donez.id
+            plog(':folderForData:foldercreated:' + donez.name + ':' + donez.id)
+            filelistret(donez)
+          }
+          else{
+            plog(':folderForData:using_root:' + donez.name + ':' + donez.id)
+            filelistret(donez)
+          }
         })
       }
 
@@ -1207,7 +1245,7 @@ function uploadMP4file(auth, local_file, filename, folderid, done) {
         version: 'v3',
         auth
       });
-
+      //console.log('uploadMP4file',local_file,' ',filename,' ',folderid)
       var fileMetadata = {
         'name': filename,
         parents: [folderid]

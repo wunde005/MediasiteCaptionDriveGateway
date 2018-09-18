@@ -13,7 +13,8 @@
     "node-json-db": "^0.7.5",
     "node-rest-client": "^3.1.0",
     "nodemailer": "^4.6.7",
-    "supports-color": "^5.4.0"
+    "supports-color": "^5.4.0",
+    "xml-js": "^1.6.7"
   },
   "devDependencies": {},
   "scripts": {
