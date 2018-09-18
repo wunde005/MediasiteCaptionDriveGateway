@@ -452,6 +452,7 @@ scanforfiles = function () {
                     if (inputfile != "") {
 
                       presentation.inputfile = inputfile
+                      
                       getPresentationInfo(presentation.id, (data) => {
                         if(config.folders_enabled){
                           presentation.ParentFolderName = data.ParentFolderName
@@ -558,9 +559,14 @@ var args = {
 };
 
 function getPresentationInfo(presentationid, done) {
-  client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
-    done(data)
-  });
+  if(client.folders_enabled){
+   client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
+      done(data)
+    });
+  }
+  else{
+    done()
+  }
 }
 
 
