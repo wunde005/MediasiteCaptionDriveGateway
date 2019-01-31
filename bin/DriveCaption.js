@@ -39,7 +39,7 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
     console.log(err);
   } else {
     config = JSON.parse(data); //now it an object
-   console.log("loaded config")
+   console.log("loaded config.json")
 
    if(config.Mediasite_Auth_file){
     const MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
@@ -47,7 +47,6 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
       if (err) {
         console.log(err);
       } else {
-        //console.log(data)
         msauth = JSON.parse(data); //now it an object
         args.headers.sfapikey = msauth.sfapikey
         args.headers.Authorization = msauth.Authorization
@@ -189,10 +188,7 @@ try {
   option_file = require(p + 'option.json')
 } catch (e) {
   plog("Notification: option.json file not found. Using defaults.")
-  //plog(option)
 }
-
-
 
 //copy file settings over default settings
 for (var attributename in enable_file) {
@@ -243,18 +239,22 @@ if (option.hasOwnProperty('mail')) {
     
     if( option['mail'][pFolder].toUpload == null){
       //console.log("to")
+      txt_to = "to"
       toaddr = option['mail'][pFolder].to
     }
     else{
       //console.log("toUpload")
+      txt_to = "toUpload"
       toaddr = option['mail'][pFolder].toUpload
     }
     if( option['mail'][pFolder].fromUpload == null){
       //console.log("from")
+      txt_from = "from"
       fromaddr = option['mail'][pFolder].from
     }
     else{
       //console.log("fromUpload")
+      txt_from = "fromUpload"
       fromaddr = option['mail'][pFolder].fromUpload
     }
     //presentation.gdrivefolderid = data.id
@@ -262,18 +262,22 @@ if (option.hasOwnProperty('mail')) {
     //uploadtxt = "\nPlease upload SRT file name " + presentation.srtfilename + " to " + "\"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
     //"ParentFolderName": "Test test",
    //"ParentFolderId": "572ac9bbd7954bdcae91421ac88f0b2d14",
-    plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
+   plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+":folder:" + pfolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
+     
+   //plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
     transporter.sendMail({
       from: fromaddr,
       to: toaddr,
       subject: config.foldername_root + ': "' + presentation.PresentationTitle + '" uploaded to Google Drive',
-      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nVideo Link: https://drive.google.com/file/d/' + presentation.gdriveid + '/view?usp=sharing' + "\n\nPlease upload SRT file name: \"" + presentation.srtfilename + "\"\n to Google Drive folder \"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
+      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nVideo Link: https://drive.google.com/file/d/' + presentation.gdriveid + '/view?usp=sharing' + "\n\nPlease upload SRT file named: \"" + presentation.srtfilename + "\"\n to Google Drive folder \"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
     }).then(function (info) {
 
     }).catch(function (err) {
       console.log(err);
     });
   }
+
+
   var sendSRTNotification = function (presentation) {
     //presentation.log
     pFolder = 'default'
@@ -288,20 +292,24 @@ if (option.hasOwnProperty('mail')) {
       pFolder = pFoldertmp
     }
     if( option['mail'][pFolder].toSRT == null){
+      txt_to = "to"
       toaddr = option['mail'][pFolder].to
     }
     else{
       toaddr = option['mail'][pFolder].toSRT
+      txt_to = "toSRT"
     }
     if( option['mail'][pFolder].fromSRT == null){
+      txt_from = "from"
       fromaddr = option['mail'][pFolder].from
     }
     else{
+      txt_from = "fromSRT"
       fromaddr = option['mail'][pFolder].fromSRT
     }
 
 
-    plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
+    plog(presentation.id + ":SRTNotification:"+presentation.PresentationTitle+":folder:" + pfolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
     transporter.sendMail({
       from: fromaddr,
       bcc: toaddr,
@@ -550,9 +558,6 @@ scanforfiles = function () {
                       presentation.inputfile = inputfile
                       
                       getPresentationInfo(presentation.id, (data) => {
-                        //plog('JSON:\n' + JSON.stringify(presentation, null, 3)+'\n',presentation)
-                        //plog('DATA:\n' + JSON.stringify(data, null, 3)+'\n',presentation)
-                        
                         if(config.folders_enabled){
                           presentation.ParentFolderName = data.ParentFolderName
                           presentation.ParentFolderId = data.ParentFolderId
@@ -567,10 +572,10 @@ scanforfiles = function () {
                           if (err) return console.log('Error loading client secret file:', err);
                           // Authorize a client with credentials, then call the Google Drive API.
                           authorize(JSON.parse(content), (auth) => {
-                            //console.log(presentation)
+                
                             folderForData(auth, config.folderid_root, presentation.ParentFolderName, (data) => {
                               plog(presentation.id + ':folderForData:FolderName:' + data.name + ':FolderId:' + data.id, presentation)
-                              //console.log("data:" + JSON.stringify(data))
+                
                               presentation.gdrivefolderid = data.id
                               presentation.gdrivefoldername = data.name
                               
@@ -580,11 +585,11 @@ scanforfiles = function () {
                               presentation.srtfilename = srtfilename
                               plog(presentation.id + ':newmp4name:filename:' + newfilename, presentation)
                               uploadMP4file(auth, presentation.inputfile, newfilename, data.id, (doner) => {
-                                //console.log("doner:" + JSON.stringify(doner))
+                
                                 presentation.gdriveid = doner.id
                                 
                                 sendUploadNotification(presentation)
-                                //sendSRTNotification(presentation)
+                
                                 plog(presentation.id + ':uploadMP4files:gdriveid:' + presentation.gdriveid, presentation)
                                 db.push("/" + presentation.id, presentation);
                                 archiveFiles(presentation, false, () => {
