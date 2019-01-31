@@ -677,6 +677,12 @@ var args = {
 function getPresentationInfo(presentationid, done) {
   
   if(config.folders_enabled){
+   if(args.headers.sfapikey === undefined){
+    console.log("setting args")
+    args.headers.sfapikey = msauth.sfapikey
+    args.headers.Authorization = msauth.Authorization
+   }
+
    client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
       done(data)
     });
