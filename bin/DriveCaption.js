@@ -262,7 +262,7 @@ if (option.hasOwnProperty('mail')) {
     //uploadtxt = "\nPlease upload SRT file name " + presentation.srtfilename + " to " + "\"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
     //"ParentFolderName": "Test test",
    //"ParentFolderId": "572ac9bbd7954bdcae91421ac88f0b2d14",
-   plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+":folder:" + pfolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
+   plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+":folder:" + pFolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
      
    //plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
     transporter.sendMail({
@@ -309,7 +309,7 @@ if (option.hasOwnProperty('mail')) {
     }
 
 
-    plog(presentation.id + ":SRTNotification:"+presentation.PresentationTitle+":folder:" + pfolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
+    plog(presentation.id + ":SRTNotification:"+presentation.PresentationTitle+":folder:" + pFolder + ":to:"+txt_to+":"+toaddr+":from:"+txt_from+":"+fromaddr,presentation)
     transporter.sendMail({
       from: fromaddr,
       bcc: toaddr,
