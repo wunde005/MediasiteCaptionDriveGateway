@@ -4,6 +4,8 @@
  * 
  */
 //
+
+var config
 const readline = require('readline');
 const {
   google
@@ -37,7 +39,7 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
     console.log(err);
   } else {
     config = JSON.parse(data); //now it an object
-   console.log
+   console.log("loaded config")
 
    if(config.Mediasite_Auth_file){
     const MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
@@ -77,7 +79,7 @@ const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = '..\\config\\credentials.json';
 
 
-var config
+
 
 var client = new Client();
 var msauth
@@ -99,6 +101,8 @@ var fslog = require('fs')
 var nodemailer = require('nodemailer');
 
 var presentationarray = []
+
+
 
 //write log info to files
 var plog = function (sLog, presentation) {
@@ -224,8 +228,99 @@ if (option.hasOwnProperty('mail')) {
       console.log(err);
     });
   }
+  var sendUploadNotification = function (presentation) {
+    //presentation.log
+    pFolder = 'default'
+    pFoldertmp = 'folder-' + presentation.ParentFolderName
+    if(!(option['mail'][pFoldertmp] == null)){
+      pFolder = pFoldertmp
+      console.log("folder options found")
+    }
+    if( option['mail'][pFolder] === undefined){
+      console.log("undefined "+pFolder)
+      return
+    }
+    
+    if( option['mail'][pFolder].toUpload == null){
+      //console.log("to")
+      toaddr = option['mail'][pFolder].to
+    }
+    else{
+      //console.log("toUpload")
+      toaddr = option['mail'][pFolder].toUpload
+    }
+    if( option['mail'][pFolder].fromUpload == null){
+      //console.log("from")
+      fromaddr = option['mail'][pFolder].from
+    }
+    else{
+      //console.log("fromUpload")
+      fromaddr = option['mail'][pFolder].fromUpload
+    }
+    //presentation.gdrivefolderid = data.id
+                              //presentation.gdrivefoldername
+    //uploadtxt = "\nPlease upload SRT file name " + presentation.srtfilename + " to " + "\"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
+    //"ParentFolderName": "Test test",
+   //"ParentFolderId": "572ac9bbd7954bdcae91421ac88f0b2d14",
+    plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
+    transporter.sendMail({
+      from: fromaddr,
+      to: toaddr,
+      subject: config.foldername_root + ': "' + presentation.PresentationTitle + '" uploaded to Google Drive',
+      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nVideo Link: https://drive.google.com/file/d/' + presentation.gdriveid + '/view?usp=sharing' + "\n\nPlease upload SRT file name: \"" + presentation.srtfilename + "\"\n to Google Drive folder \"" + presentation.gdrivefoldername + "\" https://drive.google.com/drive/u/0/folders/" + presentation.gdrivefolderid + "\n"
+    }).then(function (info) {
+
+    }).catch(function (err) {
+      console.log(err);
+    });
+  }
+  var sendSRTNotification = function (presentation) {
+    //presentation.log
+    pFolder = 'default'
+    pFoldertmp = 'folder-' + presentation.ParentFolderName
+    
+    if( option['mail'][pFolder] === undefined ){
+      console.log("undefined "+pFolder)
+      return
+    }
+
+    if(!(option['mail'][pFoldertmp] == null)){
+      pFolder = pFoldertmp
+    }
+    if( option['mail'][pFolder].toSRT == null){
+      toaddr = option['mail'][pFolder].to
+    }
+    else{
+      toaddr = option['mail'][pFolder].toSRT
+    }
+    if( option['mail'][pFolder].fromSRT == null){
+      fromaddr = option['mail'][pFolder].from
+    }
+    else{
+      fromaddr = option['mail'][pFolder].fromSRT
+    }
+
+
+    plog(presentation.id + ":UploadNotification:"+presentation.PresentationTitle+" sent to:"+toaddr+" sent from:"+fromaddr,presentation)
+    transporter.sendMail({
+      from: fromaddr,
+      bcc: toaddr,
+      subject: config.foldername_root + ': "' + presentation.PresentationTitle + '" captioning complete',
+      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: ' + presentation.ParentFolderName + '\n\nLink: https://mediasite.csom.umn.edu/Mediasite/Play/' + presentation.id.replace(/-/g,'') + '\n' + '\n\n' 
+    }).then(function (info) {
+
+    }).catch(function (err) {
+      console.log(err);
+    });
+  }
 } else {
   var sendNotification = function (presentation) {
+    return
+  }
+  var sendUploadNotification = function (presentation) {
+    return
+  }
+  var sendSRTNotification = function (presentation) {
     return
   }
 }
@@ -379,6 +474,7 @@ function post(transcript, presentation, cb) {
       }
       if (presentation.id) {
         db.delete('/' + presentation.id)
+        sendSRTNotification(presentation)
         archiveFiles(presentation, true, () => {
           plog(presentation.id + ':archiveFiles:logonly:done')//, presentation)
         })
@@ -454,6 +550,9 @@ scanforfiles = function () {
                       presentation.inputfile = inputfile
                       
                       getPresentationInfo(presentation.id, (data) => {
+                        //plog('JSON:\n' + JSON.stringify(presentation, null, 3)+'\n',presentation)
+                        //plog('DATA:\n' + JSON.stringify(data, null, 3)+'\n',presentation)
+                        
                         if(config.folders_enabled){
                           presentation.ParentFolderName = data.ParentFolderName
                           presentation.ParentFolderId = data.ParentFolderId
@@ -471,11 +570,21 @@ scanforfiles = function () {
                             //console.log(presentation)
                             folderForData(auth, config.folderid_root, presentation.ParentFolderName, (data) => {
                               plog(presentation.id + ':folderForData:FolderName:' + data.name + ':FolderId:' + data.id, presentation)
-
+                              //console.log("data:" + JSON.stringify(data))
+                              presentation.gdrivefolderid = data.id
+                              presentation.gdrivefoldername = data.name
+                              
                               var newfilename = presentation.Title + '_' + presentation.id + ".mp4"
+                              var srtfilename = presentation.Title + '_' + presentation.id + ".srt"
+                              presentation.newfilename = newfilename
+                              presentation.srtfilename = srtfilename
                               plog(presentation.id + ':newmp4name:filename:' + newfilename, presentation)
                               uploadMP4file(auth, presentation.inputfile, newfilename, data.id, (doner) => {
+                                //console.log("doner:" + JSON.stringify(doner))
                                 presentation.gdriveid = doner.id
+                                
+                                sendUploadNotification(presentation)
+                                //sendSRTNotification(presentation)
                                 plog(presentation.id + ':uploadMP4files:gdriveid:' + presentation.gdriveid, presentation)
                                 db.push("/" + presentation.id, presentation);
                                 archiveFiles(presentation, false, () => {
@@ -559,7 +668,8 @@ var args = {
 };
 
 function getPresentationInfo(presentationid, done) {
-  if(client.folders_enabled){
+  
+  if(config.folders_enabled){
    client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
       done(data)
     });
@@ -582,7 +692,7 @@ function checkForSRTfiles(done) {
         auth
       });
       plog(':checkForSRTfiles:scanning:' + moment(new Date()).format('YYYYMMDD-HH:mm:ss'))
-      plog(':checkForSRTfiles:scanning:root_folder:' + config.folderid_root)
+      plog(':checkForSRTfiles:scanning:root_folder:' + config.foldername_root + ":" + config.folderid_root)
       //console.log("scanning: root folder")
       srtRecursive(auth, { id: config.folderid_root, name: "rootfolder" }, () => console.log("check for srt file done"))
 
@@ -995,7 +1105,7 @@ async function folderForData(auth, folderid_root, foldername, filelistret) {
     //if (!data) return console.log('The API returned an error: ');
     //console.log(response)
     var data = response.data
-
+    //console.log("response:"+JSON.stringify(data))
     if (data.files.length > 1) {
       console.log("WARN: more than one folder returned")
     }
@@ -1005,7 +1115,7 @@ async function folderForData(auth, folderid_root, foldername, filelistret) {
       filelistret(file)
       }
     else if(foldername == ""){
-      filelistret({"id":config.folderid_root,"name":"root"})        
+      filelistret({"id":config.folderid_root,"name":config.foldername_root})        
     } else {
       plog(':folderForData:creatingfolder:' + foldername)
       //console.log('Folder not found. Creating new folder.');
@@ -1281,7 +1391,7 @@ function uploadMP4file(auth, local_file, filename, folderid, done) {
 if (require.main === module) {
   console.log('called directly');
   checkForSRTfiles(() => console.log("test done"))
-
+  
   var countInterval = 0
   //upload_int = setInterval(() => { uploadMP4file(auth_info,"files/test.mp4","test.mp4",folderid_root, () => {console.log('upload');clearInterval(upload_int)})},10000)
   upload_int = setInterval(() => {
@@ -1301,7 +1411,9 @@ if (require.main === module) {
       scanforfiles()
 
     }
-
+    //getPresentationInfo('1e5c57f1e9fc48579b43f9ba1f9f180e1d',(done)=> {
+     // console.log('DATA:\n' + JSON.stringify(done, null, 3)+'\n')
+    //})
     //}, 1000)
     //}, 300000) //5 minute
     //}, 60000) //1 minute
@@ -1310,6 +1422,7 @@ if (require.main === module) {
 } else {
   console.log('running DriveCaption as Module');
 }
+
 
 var getKeys = function (obj) {
   var keys = [];
