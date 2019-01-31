@@ -33,7 +33,7 @@ else {
   var configp = '/../config/'
 }
 console.log("cwd path:", p)
-
+msauth = require(__dirname + configp + "mediasite_auth.json")
 fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
   if (err) {
     console.log(err);
@@ -42,6 +42,7 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
    console.log("loaded config.json")
 
    if(config.Mediasite_Auth_file){
+    console.log("loading "+config.Mediasite_Auth_file)
     const MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
     fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
       if (err) {
@@ -56,6 +57,7 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
   }
   else{
     const MEDIASITE_AUTH = __dirname + configp + 'mediasite_auth.json'
+    console.log("loading "+MEDIASITE_AUTH)
     fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
       if (err) {
         console.log(err);
