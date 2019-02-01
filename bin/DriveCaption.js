@@ -377,8 +377,8 @@ var archiveFiles = function (presentation, logonly, cb) {
   }
   var filelist = []
 
-  if (!fs.existsSync(p + option.archive)) {
-    fs.mkdirSync(p + option.archive);
+  if (!fs.existsSync(cwd + option.archive)) {
+    fs.mkdirSync(cwd + option.archive);
   }
   if (logonly) {
     filelist.push(presentation.log)
