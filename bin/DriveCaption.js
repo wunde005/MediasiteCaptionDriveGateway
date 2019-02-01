@@ -388,7 +388,7 @@ var archiveFiles = function (presentation, logonly, cb) {
   }
   filelist.forEach(function (file) {
     plog(presentation.id + ":archive:Moving File:" + file)
-    fs.rename(file, p + option.archive + '/' + path.basename(file), function (err) {
+    fs.rename(file, cwd + option.archive + '/' + path.basename(file), function (err) {
       if (err) {
         plog(presentation.id + ':ERROR:' + err)
         //throw err;
