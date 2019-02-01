@@ -25,15 +25,45 @@ const moveMP4 = true
 
 var isWin = process.platform === 'win32' //is this running on windows
 if (isWin) {
-  var p = process.cwd() + "\\"
-  var configp = '\\..\\config\\'
+  //var p = process.cwd() + "\\"
+  var p = path.dirname(__dirname) + "\\"
+  var configp = p + 'config\\'
+  var cwd = process.cwd() + "\\"
 }
 else {
-  var p = process.cwd() + '/'
-  var configp = '/../config/'
+  //var p = process.cwd() + '/'
+  var p = path.dirname(__dirname) + '/'
+  var configp = p+'config/'
+  var cwd = process.cwd() + '/'
 }
-console.log("cwd path:", p)
-msauth = require(__dirname + configp + "mediasite_auth.json")
+
+//console.log("dirname:"+__dirname)
+//console.log("filename:"+__filename)
+//console.log("cwd:"+process.cwd())
+//console.log("cwd path:", p)
+msauthfilefull =  configp + "mediasite_auth.json"
+
+config = require(cwd + 'config.json')
+if(config.Mediasite_Auth_file){
+  msauthfilefull = configp + config.Mediasite_Auth_file
+  console.log("using config.mediasite_auth_file")
+}
+console.log("msauth config file:"+msauthfilefull)
+try{
+  msauthexists = require.resolve(msauthfilefull)
+}
+catch(error){
+  msauthexists = false 
+}
+//console.log("mediasitefull:"+msauthfilefull)
+if(msauthexists){
+  msauth = require(msauthfilefull)
+  //console.log(JSON.stringify(msauth))
+}
+else{
+  console.log("No Mediasite Auth config found("+msauthfilefull+")")
+}
+/*
 fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
   if (err) {
     console.log(err);
@@ -43,7 +73,7 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
 
    if(config.Mediasite_Auth_file){
     console.log("loading "+config.Mediasite_Auth_file)
-    const MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
+    MEDIASITE_AUTH = __dirname + configp + config.Mediasite_Auth_file
     fs.readFile(MEDIASITE_AUTH, 'utf8', function readFileCallback(err, data) {
       if (err) {
         console.log(err);
@@ -73,7 +103,9 @@ fs.readFile(p + 'config.json', 'utf8', function readFileCallback(err, data) {
   
   }
 }) //config.folders_enabled
-const CLIENT_SECRET = __dirname + configp + 'client_secret.json'
+
+*/
+const CLIENT_SECRET = configp + 'client_secret.json'
 
 // If modifying these scopes, delete credentials.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
@@ -180,14 +212,14 @@ var option_file = {}
 
 try {
   //console.log(p + 'enable.json')
-  enable_file = require(p + 'enable.json')
+  enable_file = require(cwd + 'enable.json')
 } catch (e) {
   plog("Notification: enable.json file not found. Using defaults.")
   //plog(enable)
 }
 
 try {
-  option_file = require(p + 'option.json')
+  option_file = require(cwd + 'option.json')
 } catch (e) {
   plog("Notification: option.json file not found. Using defaults.")
 }
@@ -206,6 +238,8 @@ var transcripts = []
 
 
 //skip mailer code if mail properties aren't set
+//console.log(option.hasOwnProperty('mail'))
+//console.log(JSON.stringify(option))
 if (option.hasOwnProperty('mail')) {
   //var transporter = nodemailer.createTransport(ses(option.mail.nodemailer));
   var transporter = nodemailer.createTransport(option.mail.nodemailer);
@@ -235,7 +269,8 @@ if (option.hasOwnProperty('mail')) {
       console.log("folder options found")
     }
     if( option['mail'][pFolder] === undefined){
-      console.log("undefined "+pFolder)
+      console.log("undefined mail settings for "+pFolder)
+      console.log("skipping email")
       return
     }
     
@@ -316,7 +351,7 @@ if (option.hasOwnProperty('mail')) {
       from: fromaddr,
       bcc: toaddr,
       subject: config.foldername_root + ': "' + presentation.PresentationTitle + '" captioning complete',
-      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: ' + presentation.ParentFolderName + '\n\nLink: https://mediasite.csom.umn.edu/Mediasite/Play/' + presentation.id.replace(/-/g,'') + '\n' + '\n\n' 
+      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nLink: https://mediasite.csom.umn.edu/Mediasite/Play/' + presentation.id.replace(/-/g,'') + '\n' + '\n\n' 
     }).then(function (info) {
 
     }).catch(function (err) {
@@ -504,14 +539,14 @@ scanforfiles = function () {
   var badManifest = false
   plog(':scanforfile:Starting:tstamp=' + (new Date().getTime()) + ':time=' + moment(new Date()).format('YYYYMMDD-HH:mm:ss'))
   //plog(path.basename(event.name, ".mp4") + ":dirWatch:MP4File=" + event.name + ":tstamp=" + (new Date().getTime()))
-  fs.readdir(p, function (err, files) {
+  fs.readdir(cwd, function (err, files) {
     if (err) {
       plog(':ERROR:' + err)
       throw err;
     }
     //plog(files)
     files.map(function (file) {
-      return path.join(p, file);
+      return path.join(cwd, file);
     }).filter(function (file) {
       return fs.statSync(file).isFile();
     }).forEach(function (file) {
@@ -677,15 +712,31 @@ var args = {
 function getPresentationInfo(presentationid, done) {
   
   if(config.folders_enabled){
-   if(args.headers.sfapikey === undefined){
-    console.log("setting args")
-    args.headers.sfapikey = msauth.sfapikey
-    args.headers.Authorization = msauth.Authorization
-   }
+    //console.log("sfapikey:"+typeof args.headers.sfapikey)
+    //console.log("sfapikey.msauth:"+msauth.sfapikey)
+    if(typeof msauth.sfapikey !== 'undefined'){
+      if(typeof args.headers.sfapikey === 'undefined'){
+        console.log("setting args.header")
+        args.headers.sfapikey = msauth.sfapikey
+        args.headers.Authorization = msauth.Authorization
 
-   client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
-      done(data)
-    });
+
+
+        client.get(msauth.uri + "/api/v1/Presentations('" + presentationid + "')?$select=full", args, function (data, response) {
+        done(data)
+        });
+        }
+      else{
+        done()
+      }
+    }
+    else{
+      console.log("disabling presentation info bad mediasite auth config")
+      config.folders_enabled = false
+    
+      //console.log("no msauth sfapikey")
+      done()
+    }
   }
   else{
     done()
