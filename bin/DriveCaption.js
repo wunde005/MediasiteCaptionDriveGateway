@@ -691,7 +691,7 @@ if (!isWin) {
 
   var home_dir = {
     // Change this for a valid directory in your machine. 
-    path: p,
+    path: cwd,
     watch_for: Inotify.IN_OPEN | Inotify.IN_CLOSE,
     callback: callback
   };
@@ -819,10 +819,10 @@ async function ManifestFileTask(auth, folder, done) {
         manifestname = presentationid + ".manifest"
         plog(presentation.id + ':ManifestFileTask:file:' + manifestname, presentation)
         if (isWin) {
-          fullmanifestname = p + 'archive\\' + manifestname
+          fullmanifestname = cwd + 'archive\\' + manifestname
         }
         else {
-          fullmanifestname = p + 'archive/' + manifestname
+          fullmanifestname = cwd + 'archive/' + manifestname
         }
         console.log(fullmanifestname)
         return readManifest(fullmanifestname)
