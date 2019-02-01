@@ -119,7 +119,7 @@ var msauth
 
 
 
-var db = new JsonDB(p + "presentations", true, true);
+var db = new JsonDB(cwd + "presentations", true, true);
 
 var currentmon = (new Date()).getMonth()
 
