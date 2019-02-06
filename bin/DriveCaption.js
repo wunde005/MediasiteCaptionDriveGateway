@@ -351,7 +351,7 @@ if (option.hasOwnProperty('mail')) {
       from: fromaddr,
       bcc: toaddr,
       subject: config.foldername_root + ': "' + presentation.PresentationTitle + '" captioning complete',
-      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nLink: https://mediasite.csom.umn.edu/Mediasite/Play/' + presentation.id.replace(/-/g,'') + '\n' + '\n\n' 
+      text: 'Presentation: "' + presentation.PresentationTitle + '"\nCourse: "' + presentation.ParentFolderName + '"\n\nLink: ' + msauth.uri + '/Play/' + presentation.id.replace(/-/g,'') + '\n' + '\n\n' 
     }).then(function (info) {
 
     }).catch(function (err) {
